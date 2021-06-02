@@ -1,4 +1,8 @@
+import time
+import random
 import re
+import sys
+import os
 import copy
 
 flatten = lambda t: [item for sublist in t for item in sublist]
@@ -30,16 +34,18 @@ def read_file(path):
     data["message"] = flatten(data["message"])
     return data
 
-read_file("./input/1_in.in")
 
 class NodeTransition:
-    def __init__(self, index, id, currentQuestioned, position, father, cost):
+    def __init__(self, index, id, currentQuestioned, position, father, cost, h, around):
         self.index = index
         self.id = id
         self.currentQuestioned = currentQuestioned
         self.position = position
         self.father = father
         self.g = cost
+        self.h = h
+        self.f = self.g + self.h
+        self.around = around
 
     def getPath(self):
         path = [self.id]
@@ -50,24 +56,25 @@ class NodeTransition:
         return path
 
     def showPath(self):
-        strPath = str(self.id)
+        strPath = str(self.index + 1) + "." + self.id
         node = self.father
         prev = self
         while node is not None:
             if prev.position["y"] < node.position["y"]:
                 if prev.position["y"] // 2 == node.position["y"] // 2:
-                    strPath = node.id + " < " + strPath
+                    strPath =  " < " + strPath
                 elif prev.position["y"] // 2 < node.position["y"] // 2:
-                    strPath = node.id + " << " + strPath
+                    strPath =  " << " + strPath
             elif prev.position["y"] > node.position["y"]:
                 if prev.position["y"] // 2 == node.position["y"] // 2:
-                    strPath = node.id + " > " + strPath
+                    strPath =  " > " + strPath
                 elif prev.position["y"] // 2 > node.position["y"] // 2:
-                    strPath = node.id + " >> " + strPath
+                    strPath =  " >> " + strPath
             elif prev.position["x"] < node.position["x"]:
-                strPath = node.id + " ^ " + strPath
+                strPath =  " ^ " + strPath
             else: 
-                strPath = node.id + " v " + strPath
+                strPath =  " v " + strPath
+            strPath = str(node.index + 1) + "." + node.id + strPath
             prev = node
             node = node.father
         return strPath
@@ -82,7 +89,9 @@ class NodeTransition:
         myStr = ""
         myStr += self.id + "(path = "
         myStr += self.showPath()
-        myStr += ", cost = " + str(self.g)
+        if self.currentQuestioned != None:
+            myStr += self.currentQuestioned
+        myStr += ", cost = " + str(self.g) + "), |||| "
         return myStr
 
 
@@ -90,14 +99,15 @@ class NodeTransition:
 class Graph:
     movesX = [0, 0, 1, -1]
     movesY = [1, -1, 0, 0]
-    def __init__(self, nodes, matrix, start, goal, questioned, upset, timeQuestioned):
-        self.nodes = nodes
-        self.matrix = matrix
+    def __init__(self, nodes, matrix, start, goal, questioned, upset, timeQuestioned, nameHeuristic = "naive"):
+        self.nodes = copy.deepcopy(nodes)
+        self.matrix = copy.deepcopy(matrix)
         self.start = start
         self.goal = goal
-        self.questioned = questioned
-        self.upset = upset
+        self.questioned = copy.deepcopy(questioned)
+        self.upset = copy.deepcopy(upset)
         self.timeQuestioned = timeQuestioned
+        self.nameHeuristic = nameHeuristic
 
     def getIndexNode(self, name):
         """
@@ -113,7 +123,9 @@ class Graph:
         # TODO: if there are no successors (b/c of questioned student) modify the if 13j and return case
         # Maybe: also add an extra variable in current node so we precisely say it's a "waiting" node generation
         successors = []
+        successors_busy = []
         initialPosition = currentNode.position
+        inPerimeterOfQuestioned = 0
         for i in range(len(self.movesX)):
             newPosition = {
                     "x": initialPosition["x"] + self.movesX[i],
@@ -123,23 +135,58 @@ class Graph:
                 id = self.matrix[newPosition["x"]][newPosition["y"]]
                 if id == "liber":
                     continue
-                if (not currentNode.isInPath(id) \
-                        and (not id in self.upset[currentNode.id]) \
-                        and (not self.isInPerimeter(currentNode, newPosition))):
+                if self.isInPerimeter(currentNode, newPosition):
+                    inPerimeterOfQuestioned += 1
+                    continue
+                if (not id in self.upset[currentNode.id]) \
+                        and (not self.isInPerimeter(currentNode, newPosition)):
                     nextIndex = currentNode.index + 1
+
                     nextQuestioned = None
-                    if nextIndex // 4 < len(self.questioned):
-                        nextQuestioned = self.questioned[nextIndex // 4]
-                    newNode = NodeTransition(
-                            nextIndex,
-                            id, 
-                            nextQuestioned,
-                            newPosition,
-                            currentNode,
-                            currentNode.g + 1
-                            )
-                    successors.append(newNode)
+                    if nextIndex // self.timeQuestioned < len(self.questioned):
+                        nextQuestioned = self.questioned[nextIndex // self.timeQuestioned]
+
+                    newCost = currentNode.g
+                    if self.movesX[i] != 0:
+                        newCost += 1
+                    elif newPosition["y"] // 2 != initialPosition["y"] // 2:
+                        newCost += 2
+
+                    if (not currentNode.isInPath(id)): 
+                        newNode = NodeTransition(
+                                nextIndex,
+                                id, 
+                                nextQuestioned,
+                                newPosition,
+                                currentNode,
+                                newCost,
+                                self.calculate_h(id),
+                                False
+                                )
+                        successors.append(newNode)
+                    elif currentNode.currentQuestioned != None:
+                        newNode = NodeTransition(
+                                nextIndex,
+                                id, 
+                                nextQuestioned,
+                                newPosition,
+                                currentNode,
+                                newCost,
+                                self.calculate_h(id),
+                                True
+                                )
+                        successors_busy.append(newNode) 
+        # if we have a succesor that's been denied and no succesors we generate some other variants
+        if len(successors) == 0 and inPerimeterOfQuestioned > 0:
+            return successors_busy
         return successors
+
+    def calculate_h(self, name):
+        if self.nameHeuristic == "naive":
+            return 1
+        if self.goal == name:
+            return 0
+        return 1
     
     def isInPerimeter(self, currentNode, newPosition):
         """
@@ -151,7 +198,7 @@ class Graph:
             pos = self.getIndexNode(currentNode.currentQuestioned)
             if (pos["x"] - 1) <= newPosition["x"] and newPosition["x"] <= (pos["x"] + 1):
                 yIndex = newPosition["y"] // 2
-                if (pos["y"] // 2 - 1) <= yIndex and yIndex <= (pos["y"] // 2 + 1):
+                if ((pos["y"] + 1) // 2) <= yIndex and yIndex <= ((pos["y"] - 1) // 2):
                     return True
         return False
 
@@ -170,8 +217,24 @@ class Graph:
             return False
         return True
 
-def uniform_cost_search(graph):
-    que = [NodeTransition(0, graph.start, None, graph.getIndexNode(graph.start), None, 0)]
+def uniform_cost_search(graph, numberOfSolutions, fout, startTime, timeoutTime):
+    timeout = time.time()
+    total_generated = 1
+    max_generated = 1
+    firstQuestioned = None
+    if len(graph.questioned) > 0: 
+        firstQuestioned = graph.questioned[0]
+    que = [
+            NodeTransition(
+                0, 
+                graph.start,
+                firstQuestioned, 
+                graph.getIndexNode(graph.start), 
+                None, 
+                0, 
+                0, 
+                False
+            )]
 
     while len(que) > 0:
         print("Current queue:")
@@ -179,18 +242,30 @@ def uniform_cost_search(graph):
         currentNode = que.pop(0)
 
         if graph.test_goal(currentNode):
+            write_to_file(fout, currentNode, startTime, max_generated, total_generated)
+            max_generated = len(que)
             print("---------------------------------------------------")
             print("Solution: ", end = "")
             print(currentNode.showPath())
             print ("Cost: {}".format(currentNode.g))
+            numberOfSolutions -= 1
+            # input()
+            if numberOfSolutions == 0:
+                return
+
+        if timeoutTime < (round(1000*(time.time() - timeout))):
+            print("Timeout exceeded")
+            fout.write("~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~\n")
             return
 
         successors = graph.generateSuccessors(currentNode)
+        max_generated = max(max_generated, len(successors) + len(que))
+        total_generated += len(successors)
         for node in successors:
             i = 0
             found_order = False
             while i < len(que):
-                if que[i].g > node.g:
+                if que[i].g >= node.g:
                     found_order = True
                     break
                 i += 1
@@ -198,12 +273,231 @@ def uniform_cost_search(graph):
                 que.insert(i, node)
             else:
                 que.append(node)
-            
+
+def a_star(graph, numberOfSolutions, fout, startTime, timeoutTime):
+    timeout = time.time()
+    total_generated = 1
+    max_generated = 1
+    firstQuestioned = None
+    if len(graph.questioned) > 0: 
+        firstQuestioned = graph.questioned[0]
+    que = [
+            NodeTransition(
+                0, 
+                graph.start,
+                firstQuestioned, 
+                graph.getIndexNode(graph.start), 
+                None, 
+                0, 
+                graph.calculate_h(graph.start), 
+                False
+            )]
+
+    while len(que) > 0:
+        print("Current queue:")
+        print(que)
+        currentNode = que.pop(0)
+
+        if graph.test_goal(currentNode):
+            write_to_file(fout, currentNode, startTime, max_generated, total_generated)
+            max_generated = len(que)
+            print("---------------------------------------------------")
+            print("Solution: ", end = "")
+            print(currentNode.showPath())
+            print ("Cost: {}".format(currentNode.g))
+            numberOfSolutions -= 1
+            # input()
+            if numberOfSolutions == 0:
+                return
+
+        if timeoutTime < (round(1000*(time.time() - timeout))):
+            print("Timeout exceeded")
+            fout.write("~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~\n")
+            return
+
+        successors = graph.generateSuccessors(currentNode)
+        max_generated = max(max_generated, len(successors) + len(que))
+        total_generated += len(successors)
+        for node in successors:
+            i = 0
+            found_order = False
+            while i < len(que):
+                if que[i].f > node.f or (que[i].f == node.f and que[i].g <= node.g):
+                    found_order = True
+                    break
+                i += 1
+            if found_order:
+                que.insert(i, node)
+            else:
+                que.append(node)
+
+def a_star_optimised(graph, fout, startTime, timeoutTime):
+    timeout = time.time()
+    total_generated = 1
+    max_generated = 1
+    firstQuestioned = None
+    if len(graph.questioned) > 0: 
+        firstQuestioned = graph.questioned[0]
+    que = [
+            NodeTransition(
+                0, 
+                graph.start,
+                firstQuestioned, 
+                graph.getIndexNode(graph.start), 
+                None, 
+                0, 
+                graph.calculate_h(graph.start),
+                False
+            )]
+
+    que_closed = []
+    while len(que) > 0:
+        print("Current queue:")
+        print(que)
+        currentNode = que.pop(0)
+        que_closed.append(currentNode)
+
+        if graph.test_goal(currentNode):
+            write_to_file(fout, currentNode, startTime, max_generated, total_generated)
+            max_generated = len(que)
+            print("---------------------------------------------------")
+            print("Solution: ", end = "")
+            print(currentNode.showPath())
+            print ("Cost: {}".format(currentNode.g))
+            # input()
+            return
+
+        if timeoutTime < (round(1000*(time.time() - timeout))):
+            print("Timeout exceeded")
+            fout.write("~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~\n")
+            return
+
+        successors = graph.generateSuccessors(currentNode)
+        
+        max_generated = max(max_generated, len(successors) + len(que))
+        total_generated += len(successors)
+        # Optimisations
+        for s in successors:
+            found = False
+            for node in que:
+                if s.id == node.id:
+                    found = True
+                    if s.f > node.f and s.around == False:
+                        successors.remove(s)
+                    elif node.around == False:
+                        que.remove(node)
+                    break
+            if not found:
+                for node in que_closed:
+                    if s.id == node.id:
+                        if s.f > node.f and s.around == False:
+                            successors.remove(s)
+                        elif node.around == False:
+                            que_closed.remove(node)
+                        break
+
+        for node in successors:
+            i = 0
+            found_order = False
+            while i < len(que):
+                if que[i].f > node.f or (que[i].f == node.f and que[i].g <= node.g):
+                    found_order = True
+                    break
+                i += 1
+            if found_order:
+                que.insert(i, node)
+            else:
+                que.append(node)
+
+def IDA_star(graph, numberOfSolutions, fout, startTime, timeoutTime):
+    timeout = time.time()
+    total_generated = 1
+    firstQuestioned = None
+    if len(graph.questioned) > 0: 
+        firstQuestioned = graph.questioned[0]
+    initialNode = NodeTransition(
+                0, 
+                graph.start,
+                firstQuestioned, 
+                graph.getIndexNode(graph.start), 
+                None, 
+                0, 
+                graph.calculate_h(graph.start),
+                False
+            )
+    limit = initialNode.f
+
+    while True:
+        print("Limit of tree depth: ", limit)
+        numberOfSolutions, result, generated = build_tree(graph, initialNode, limit, numberOfSolutions, fout, startTime, timeout, timeoutTime, 0, total_generated)
+        total_generated += generated
+        if result == "done":
+            break
+        if result == float("inf"):
+            print("No solutions found")
+            break
+
+        if timeoutTime < (round(1000*(time.time() - timeout))) or result == "timeout":
+            print("Timeout exceeded")
+            fout.write("~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~\n")
+            return
+
+        limit = result
+        print(">>>>> New limit: {} <<<<<<".format(limit))
+        # input()
+
+def build_tree(graph, currentNode, limit, numberOfSolutions, fout, startTime, timeout, timeoutTime,currently_generated, total_generated):
+    print("Reached: ", currentNode)
+    currentlyGen = 0
+    print("G and H and F: {} {} {}".format(currentNode.g, currentNode.h, currentNode.f))
+    print("test_goal: ", graph.test_goal(currentNode))
+    if currentNode.f > limit:
+        return numberOfSolutions, currentNode.f, 0
+    if graph.test_goal(currentNode) and currentNode.f == limit:
+        write_to_file(fout, currentNode, startTime, currently_generated, total_generated)
+        print("---------------------------------------------------")
+        print("Solution: ", end = "")
+        print(currentNode.showPath())
+        print("Limit: {}".format(limit))
+        print ("Cost: {}".format(currentNode.g))
+        # input()
+        numberOfSolutions -= 1
+        if numberOfSolutions == 0:
+            return 0, "done", 0
+    successors = graph.generateSuccessors(currentNode)
+    minim = float("inf")
+
+    if timeoutTime < (round(1000*(time.time() - timeout))):
+        return 0, "timeout", 0
 
 
-def main():
-    data = read_file("./input/1_in.in")
-    # we still need to do some data precomputations
+    for s in successors:
+        numberOfSolutions, result, generated = build_tree(graph, s, limit, numberOfSolutions, fout, startTime, timeout, timeoutTime, max(currently_generated, currentlyGen), total_generated + currentlyGen)
+        currentlyGen += generated
+        if result == "done":
+            return 0, "done", currentlyGen
+        if result == "timeout":
+            return 0, "timeout", currentlyGen
+        print("Comparing ", result, " with ", minim)
+        if result < minim:
+            minim = result
+            print("New minim: ", minim)
+    currentlyGen += len(successors)
+    return numberOfSolutions, minim, currentlyGen
+
+def write_to_file(fout, currentNode, startTime, maxGenerated, totalGenerated):
+    fout.write("Solution: ")
+    fout.write(currentNode.showPath() + '\n')
+    fout.write("Length: {}\n".format(currentNode.index + 1))
+    fout.write("Cost: {}\n".format(currentNode.g))
+    fout.write("Time: {}\n".format(round(1000*(time.time() - startTime))))
+    fout.write("Max nodes: {}\n".format(maxGenerated))
+    fout.write("Total nodes: {}\n".format(totalGenerated))
+    fout.write("---------------------------------------------------\n")
+
+
+def prelucrate_data(inData):
+    data = copy.deepcopy(inData)
     upset = {}
     nodes = {}
     for i in range(len(data["data"])):
@@ -214,21 +508,88 @@ def main():
     for elem in data["upset"]:
         upset[elem[0]].append(elem[1])
         upset[elem[1]].append(elem[0])
-    timeQuestioned = data["questioned"][0]
+    timeQuestioned = int(data["questioned"][0])
     questioned = list(data["questioned"][1:])
+    return nodes, data["data"], data["message"][0], data["message"][1], questioned, upset, timeQuestioned
 
-    graph = Graph(
-            copy.deepcopy(nodes),
-            copy.deepcopy(data["data"]),
-            data["message"][0],
-            data["message"][1],
-            questioned,
-            upset,
-            timeQuestioned
-            )
+def main():
+    if (len(sys.argv) < 4):
+        print("Wrong number of arguments!")
+        return
+    folderIn = sys.argv[1]
+    folderOut = sys.argv[2]
+    NSol = int(sys.argv[3])
+    timeoutTime = int(sys.argv[4])
 
-    uniform_cost_search(graph)
+    startTimer = time.time()
 
+    # Preparing data out
+    if not os.path.exists(folderOut):
+        os.mkdir(folderOut)
+
+    # Data in
+    listFolder = os.listdir(folderIn)
+    data = read_file("./input/1_in.in")
+    for file in listFolder:
+        fileName = file.split(".")[0]
+        fout = open("./{}/{}.out".format(folderOut, fileName), "w")
+        data = read_file("./{}/{}".format(folderIn, file))
+        nodes, matrix, start, goal, questioned, upset, timeQuestioned = prelucrate_data(data)
+        graphUCS = Graph(
+                nodes,
+                matrix,
+                start,
+                goal,
+                questioned,
+                upset,
+                timeQuestioned,
+                "naive"
+                )
+        fout.write(">>>>>> UCS solutions <<<<<<<<\n")
+        uniform_cost_search(graphUCS, NSol, fout, startTimer, timeoutTime)
+
+        heuristics = ["naive", "admissible1", "admissible2", "inadmissible"]
+
+        for heurisitic in heuristics:
+            graphAS = Graph(
+                    nodes,
+                    matrix,
+                    start,
+                    goal,
+                    questioned,
+                    upset,
+                    timeQuestioned,
+                    heurisitic
+                    )
+            graphASO = Graph(
+                    nodes,
+                    matrix,
+                    start,
+                    goal,
+                    questioned,
+                    upset,
+                    timeQuestioned,
+                    heurisitic
+                    )
+            graphIDA = Graph(
+                    nodes,
+                    matrix,
+                    start,
+                    goal,
+                    questioned,
+                    upset,
+                    timeQuestioned,
+                    heurisitic
+                    )
+            fout.write(">>>>>> A star solutions: " + heurisitic + " <<<<<<<<\n")
+            a_star(graphAS, NSol, fout, startTimer, timeoutTime)
+            fout.write(">>>>>> A star optimised solutions: " + heurisitic + " <<<<<<<<\n")
+            a_star_optimised(graphASO, fout, startTimer, timeoutTime)
+            fout.write(">>>>>> IDA solutions: " + heurisitic + " <<<<<<<<\n")
+            IDA_star(graphIDA, NSol, fout, startTimer, timeoutTime)
+    # we still need to do some data precomputations
+
+    
 if __name__ == "__main__":
     main()
 
