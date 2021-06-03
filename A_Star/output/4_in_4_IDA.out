@@ -1,0 +1,93 @@
+
+>>>>>> IDA solutions: naive <<<<<<<<
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria > 32.gabi ^ 33.dorel < 34.pepega ^ 35.gigel > 36.elena
+Length: 36
+Cost: 20
+Time: 2469
+Max nodes: 1
+Total nodes: 40769
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria > 32.gabi ^ 33.dorel ^ 34.elena
+Length: 34
+Cost: 20
+Time: 2469
+Max nodes: 3
+Total nodes: 40772
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria ^ 32.pepega > 33.dorel ^ 34.elena
+Length: 34
+Cost: 20
+Time: 2469
+Max nodes: 11
+Total nodes: 40780
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria ^ 32.pepega ^ 33.gigel > 34.elena
+Length: 34
+Cost: 20
+Time: 2469
+Max nodes: 11
+Total nodes: 40784
+---------------------------------------------------
+
+>>>>>> IDA solutions: admissible1 <<<<<<<<
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria > 32.gabi ^ 33.dorel < 34.pepega ^ 35.gigel > 36.elena
+Length: 36
+Cost: 20
+Time: 3904
+Max nodes: 1
+Total nodes: 40769
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria > 32.gabi ^ 33.dorel ^ 34.elena
+Length: 34
+Cost: 20
+Time: 3904
+Max nodes: 3
+Total nodes: 40772
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria ^ 32.pepega > 33.dorel ^ 34.elena
+Length: 34
+Cost: 20
+Time: 3904
+Max nodes: 11
+Total nodes: 40780
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria ^ 32.pepega ^ 33.gigel > 34.elena
+Length: 34
+Cost: 20
+Time: 3904
+Max nodes: 11
+Total nodes: 40784
+---------------------------------------------------
+
+>>>>>> IDA solutions: admissible2 <<<<<<<<
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria > 32.gabi ^ 33.dorel < 34.pepega ^ 35.gigel > 36.elena
+Length: 36
+Cost: 20
+Time: 5344
+Max nodes: 1
+Total nodes: 40769
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria > 32.gabi ^ 33.dorel ^ 34.elena
+Length: 34
+Cost: 20
+Time: 5344
+Max nodes: 3
+Total nodes: 40772
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria ^ 32.pepega > 33.dorel ^ 34.elena
+Length: 34
+Cost: 20
+Time: 5344
+Max nodes: 11
+Total nodes: 40780
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex < 15.viorel v 16.jonah > 17.bennett v 18.gardner < 19.minahil v 20.terri > 21.olson >> 22.macey > 23.mcknight v 24.thatcher >> 25.bertha > 26.reyes ^ 27.singh < 28.yassin ^ 29.trystan ^ 30.jon ^ 31.maria ^ 32.pepega ^ 33.gigel > 34.elena
+Length: 34
+Cost: 20
+Time: 5344
+Max nodes: 11
+Total nodes: 40784
+---------------------------------------------------
+
+>>>>>> IDA solutions: inadmissible <<<<<<<<
+~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~

@@ -1,0 +1,29 @@
+>>>>>> UCS solutions <<<<<<<<
+Solution: 1.ionel > 2.alina v 3.diana v 4.costin v 5.simona v 6.razvan v 7.andrei >> 8.oana ^ 9.radu > 10.patricia v 11.victor v 12.nicoleta >> 13.maria > 14.gabi ^ 15.dorel ^ 16.elena < 17.gigel ^ 18.tamara > 19.dragos
+Length: 19
+Cost: 15
+Time: 6773
+Max nodes: 28
+Total nodes: 190
+---------------------------------------------------
+Solution: 1.ionel > 2.alina v 3.diana v 4.costin v 5.simona < 6.luiza v 7.mihnea > 8.razvan v 9.andrei >> 10.oana ^ 11.radu > 12.patricia v 13.victor v 14.nicoleta >> 15.maria > 16.gabi ^ 17.dorel ^ 18.elena < 19.gigel ^ 20.tamara > 21.dragos
+Length: 21
+Cost: 15
+Time: 6773
+Max nodes: 14
+Total nodes: 193
+---------------------------------------------------
+Solution: 1.ionel > 2.alina v 3.diana v 4.costin v 5.simona v 6.razvan v 7.andrei >> 8.oana ^ 9.radu ^ 10.dana > 11.cristian v 12.patricia v 13.victor v 14.nicoleta >> 15.maria > 16.gabi ^ 17.dorel ^ 18.elena < 19.gigel ^ 20.tamara > 21.dragos
+Length: 21
+Cost: 17
+Time: 6773
+Max nodes: 21
+Total nodes: 234
+---------------------------------------------------
+Solution: 1.ionel > 2.alina v 3.diana v 4.costin v 5.simona < 6.luiza v 7.mihnea > 8.razvan v 9.andrei >> 10.oana ^ 11.radu ^ 12.dana > 13.cristian v 14.patricia v 15.victor v 16.nicoleta >> 17.maria > 18.gabi ^ 19.dorel ^ 20.elena < 21.gigel ^ 22.tamara > 23.dragos
+Length: 23
+Cost: 17
+Time: 6773
+Max nodes: 22
+Total nodes: 237
+---------------------------------------------------

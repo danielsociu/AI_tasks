@@ -5,7 +5,7 @@ import math
 import sys
 import os
 import copy
-
+# Sociu Daniel Group: 242
 flatten = lambda t: [item for sublist in t for item in sublist]
 printGlobally = False
 

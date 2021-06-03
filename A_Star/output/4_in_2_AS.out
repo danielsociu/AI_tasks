@@ -1,0 +1,39 @@
+
+>>>>>> A star solutions: naive <<<<<<<<
+~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~
+
+>>>>>> A star solutions: admissible1 <<<<<<<<
+~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~
+
+>>>>>> A star solutions: admissible2 <<<<<<<<
+~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~
+
+>>>>>> A star solutions: inadmissible <<<<<<<<
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex v 15.bennett < 16.jonah v 17.minahil v 18.terri > 19.olson >> 20.macey > 21.mcknight v 22.thatcher >> 23.bertha ^ 24.yassin ^ 25.trystan ^ 26.jon ^ 27.maria ^ 28.pepega ^ 29.gigel > 30.elena
+Length: 30
+Cost: 20
+Time: 5766
+Max nodes: 1111
+Total nodes: 15896
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex v 15.bennett < 16.jonah v 17.minahil v 18.terri > 19.olson >> 20.macey > 21.mcknight v 22.thatcher >> 23.bertha ^ 24.yassin ^ 25.trystan ^ 26.jon ^ 27.maria ^ 28.pepega > 29.dorel ^ 30.elena
+Length: 30
+Cost: 20
+Time: 5766
+Max nodes: 559
+Total nodes: 15910
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex v 15.bennett < 16.jonah v 17.minahil v 18.terri > 19.olson >> 20.macey > 21.mcknight v 22.thatcher >> 23.bertha ^ 24.yassin ^ 25.trystan ^ 26.jon ^ 27.maria > 28.gabi ^ 29.dorel ^ 30.elena
+Length: 30
+Cost: 20
+Time: 5767
+Max nodes: 562
+Total nodes: 15929
+---------------------------------------------------
+Solution: 1.ionel > 2.alina < 3.ionel > 4.alina < 5.ionel > 6.alina v 7.diana v 8.costin v 9.simona < 10.luiza v 11.mihnea > 12.razvan v 13.andrei v 14.alex v 15.bennett < 16.jonah v 17.minahil v 18.terri > 19.olson >> 20.macey > 21.mcknight v 22.thatcher >> 23.bertha ^ 24.yassin ^ 25.trystan ^ 26.jon ^ 27.maria > 28.gabi ^ 29.dorel < 30.pepega ^ 31.gigel > 32.elena
+Length: 32
+Cost: 20
+Time: 5767
+Max nodes: 565
+Total nodes: 15946
+---------------------------------------------------

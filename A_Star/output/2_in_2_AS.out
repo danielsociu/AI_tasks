@@ -1,0 +1,36 @@
+
+>>>>>> A star solutions: naive <<<<<<<<
+Solution: 1.ionel
+Length: 1
+Cost: 0
+Time: 5
+Max nodes: 1
+Total nodes: 1
+---------------------------------------------------
+
+>>>>>> A star solutions: admissible1 <<<<<<<<
+Solution: 1.ionel
+Length: 1
+Cost: 0
+Time: 19
+Max nodes: 1
+Total nodes: 1
+---------------------------------------------------
+
+>>>>>> A star solutions: admissible2 <<<<<<<<
+Solution: 1.ionel
+Length: 1
+Cost: 0
+Time: 33
+Max nodes: 1
+Total nodes: 1
+---------------------------------------------------
+
+>>>>>> A star solutions: inadmissible <<<<<<<<
+Solution: 1.ionel
+Length: 1
+Cost: 0
+Time: 46
+Max nodes: 1
+Total nodes: 1
+---------------------------------------------------
