@@ -72,6 +72,20 @@ class NodeTransition:
             node = node.father
         return path
 
+    def ignoreAround(self, id):
+        """
+        Checks if it was generated b/c of having to spin around
+        """
+        node = self
+        while node is not None:
+            if node.id == id:
+                if node.around == False:
+                    return False
+                else:
+                    return True
+            node = node.father
+        return False
+
     def showPath(self):
         """
         Prints the path of the current node
@@ -216,6 +230,8 @@ class Graph:
                 id = self.matrix[newPosition["x"]][newPosition["y"]]
                 if id == "liber":
                     continue
+                # print (currentNode.index + 1, id,  self.isInPerimeter(currentNode, newPosition), currentNode.currentQuestioned, self.questioned)
+                # input()
                 if self.isInPerimeter(currentNode, newPosition):
                     inPerimeterOfQuestioned += 1
                     continue
@@ -224,7 +240,7 @@ class Graph:
                     nextIndex = currentNode.index + 1
 
                     nextQuestioned = None
-                    if nextIndex // self.timeQuestioned < len(self.questioned):
+                    if (nextIndex // self.timeQuestioned) < len(self.questioned):
                         nextQuestioned = self.questioned[nextIndex // self.timeQuestioned]
 
                     newCost = currentNode.g
@@ -233,7 +249,7 @@ class Graph:
                     elif newPosition["y"] // 2 != initialPosition["y"] // 2:
                         newCost += 2
 
-                    if (not currentNode.isInPath(id)): 
+                    if (not currentNode.isInPath(id) or currentNode.ignoreAround(id)): 
                         newNode = NodeTransition(
                                 nextIndex,
                                 id, 
@@ -310,7 +326,7 @@ class Graph:
             pos = self.getIndexNode(currentNode.currentQuestioned)
             if (pos["x"] - 1) <= newPosition["x"] and newPosition["x"] <= (pos["x"] + 1):
                 yIndex = newPosition["y"] // 2
-                if ((pos["y"] + 1) // 2) <= yIndex and yIndex <= ((pos["y"] - 1) // 2):
+                if ((pos["y"] // 2) * 2) - 1 <= yIndex and yIndex <= ((pos["y"] // 2) * 2) + 1:
                     return True
         return False
 
@@ -630,6 +646,9 @@ def build_tree(graph, currentNode, limit, numberOfSolutions, fout, startTime, ti
         print("G and H and F: {} {} {}".format(currentNode.g, currentNode.h, currentNode.f))
         print("test_goal: ", graph.test_goal(currentNode))
     currentlyGen = 0
+    # Because the heuristic is inadmissible IDA will never go through a solution b/c f is broken and never == limit
+    # if (currentNode.id == graph.goal and graph.nameHeuristic == "inadmissible"):
+    #     print ("YES", limit , currentNode.f)
     if currentNode.f > limit:
         return numberOfSolutions, currentNode.f, 0
     if graph.test_goal(currentNode) and currentNode.f == limit:
