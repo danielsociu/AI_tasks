@@ -41,6 +41,16 @@ def read_file(path):
 
 class NodeTransition:
     def __init__(self, index, id, currentQuestioned, position, father, cost, h, around):
+        """
+        index - the index of the node in the path
+        id - the unique name of a children
+        currentQuestioned - if there is a student currently questioned
+        father - father in the tree
+        g - the g cost
+        h - the heuristic cost
+        f - g + h
+        around - if it has to spin around b/c of a questioned student
+        """
         self.index = index
         self.id = id
         self.currentQuestioned = currentQuestioned
@@ -52,6 +62,9 @@ class NodeTransition:
         self.around = around
 
     def getPath(self):
+        """
+        Returns the path of the current node
+        """
         path = [self.id]
         node = self.father
         while node is not None:
@@ -60,6 +73,9 @@ class NodeTransition:
         return path
 
     def showPath(self):
+        """
+        Prints the path of the current node
+        """
         strPath = str(self.index + 1) + "." + self.id
         node = self.father
         prev = self
@@ -84,6 +100,9 @@ class NodeTransition:
         return strPath
 
     def isInPath(self, nodeId):
+        """
+        Checks if a node is in the path of another one (based on the unique name)
+        """
         path = self.getPath()
         if nodeId in path:
             return True
@@ -104,6 +123,16 @@ class Graph:
     movesX = [0, 0, 1, -1]
     movesY = [1, -1, 0, 0]
     def __init__(self, nodes, matrix, start, goal, questioned, upset, timeQuestioned, nameHeuristic = "naive"):
+        """
+        nodes - a codification so we get the position of a student in O(1), nodes[name] = position
+        matrix - the class matrix
+        start - starting node
+        goal - the goal which we have to reach
+        quesitoned - the list of questioned students
+        upset - Every student has a list of children who are upset: upset[name] = [list of names]
+        timeQuestioned - the time each student is questioned for
+        nameHeuristic - the type of heuristic
+        """
         self.nodes = copy.deepcopy(nodes)
         self.matrix = copy.deepcopy(matrix)
         self.start = start
@@ -128,6 +157,13 @@ class Graph:
         return False
 
     def check_solvable(self):
+        """
+        Verifies if the problem can be solvable:
+        Basically it checks if it has to cross through the last two rows, and if any of those are blocked off completely
+        Or checks if the rows of start or goal are blocked off (only if it has to cross to another column)
+        Returns:
+            True if it's solvable, False otherwise
+        """
         posStart = self.getIndexNode(self.start)
         posGoal = self.getIndexNode(self.goal)
         starty = (min(posStart["y"], posGoal['y']) // 2) * 2 
@@ -151,11 +187,22 @@ class Graph:
         return True
 
     def test_goal(self, currentNode):
+        """
+        Checks if a node is the goal
+        """
         return self.goal == currentNode.id
 
     def generateSuccessors(self, currentNode):
-        # TODO: if there are no successors (b/c of questioned student) modify the if 13j and return case
-        # Maybe: also add an extra variable in current node so we precisely say it's a "waiting" node generation
+        """
+        Generates successors for the current node
+        We generate the 4 possible positions and we do various checkings:
+            * If it's the perimeter of a questioned student
+            * If the new successors is upset or free(liber)
+            * If the new successors is in the path of the currentNode, with one exception:
+            * Also if the generation gets stuck b/c of currently questioned, we have the possibility to go over already generated nodes
+        Returns:
+            The list of successors
+        """
         successors = []
         successors_busy = []
         initialPosition = currentNode.position
@@ -216,6 +263,13 @@ class Graph:
         return successors
 
     def calculate_h(self, name):
+        """
+        Calculates the heuristic for a specific student
+        naive - the basic one (it's a bug if we return 0 on goal, so I chose to return 1)
+        admissible1 - uses the euclidean distance
+        admissible2 - uses the manhattan distance (modified for our problem)
+        inadmissible - uses the current x and y of the node
+        """
         if self.nameHeuristic == "naive":
             return 1
         if self.goal == name:
@@ -276,6 +330,14 @@ class Graph:
         return True
 
 def uniform_cost_search(graph, numberOfSolutions, fout, startTime, timeoutTime):
+    """
+    UCS - implementation, uses the g cost instead of f
+    graph - the graph 
+    numberOfSolutions - the number of solutions to be searched for
+    fout - file to write output to
+    startTime - the global starting time of the algorithm
+    timeoutTime - time till we timeout the search for solutions
+    """
     timeout = time.time()
     total_generated = 1
     max_generated = 1
@@ -338,6 +400,14 @@ def uniform_cost_search(graph, numberOfSolutions, fout, startTime, timeoutTime):
                 que.append(node)
 
 def a_star(graph, numberOfSolutions, fout, startTime, timeoutTime):
+    """
+    A star - implementation, uses the f cost
+    graph - the graph 
+    numberOfSolutions - the number of solutions to be searched for
+    fout - file to write output to
+    startTime - the global starting time of the algorithm
+    timeoutTime - time till we timeout the search for solutions
+    """
     timeout = time.time()
     total_generated = 1
     max_generated = 1
@@ -400,6 +470,14 @@ def a_star(graph, numberOfSolutions, fout, startTime, timeoutTime):
                 que.append(node)
 
 def a_star_optimised(graph, fout, startTime, timeoutTime):
+    """
+    A star optimised - implementation, uses the f cost + the open and closed lists
+    graph - the graph 
+    numberOfSolutions - the number of solutions to be searched for
+    fout - file to write output to
+    startTime - the global starting time of the algorithm
+    timeoutTime - time till we timeout the search for solutions
+    """
     timeout = time.time()
     total_generated = 1
     max_generated = 1
@@ -483,6 +561,14 @@ def a_star_optimised(graph, fout, startTime, timeoutTime):
                 que.append(node)
 
 def IDA_star(graph, numberOfSolutions, fout, startTime, timeoutTime):
+    """
+    Iterative deepening A Star - implementation, uses a limit and keeps making the limit bigger as it can't find all solutions (recursively)
+    graph - the graph 
+    numberOfSolutions - the number of solutions to be searched for
+    fout - file to write output to
+    startTime - the global starting time of the algorithm
+    timeoutTime - time till we timeout the search for solutions
+    """
     timeout = time.time()
     total_generated = 1
     firstQuestioned = None
@@ -526,6 +612,19 @@ def IDA_star(graph, numberOfSolutions, fout, startTime, timeoutTime):
         # input()
 
 def build_tree(graph, currentNode, limit, numberOfSolutions, fout, startTime, timeout, timeoutTime,currently_generated, total_generated):
+    """
+    This builds the tree for a specific limit of the IDA* through recursiveness
+    graph - the graph
+    currentNode - current node in the recursive memory,
+    limit - the depth limit
+    numberOfSolutions - number of solutions searched for
+    fout - file to output to
+    startTime -  the global starting time
+    timeout - the time it has been running for(searching for solutions)
+    timeoutTime - the timeout till it stops searching for solutions
+    currently_generated - number of nodes in memoery in this solution (max)
+    total_generated - the number generated by all iterations 
+    """
     if printGlobally: 
         print("Reached: ", currentNode)
         print("G and H and F: {} {} {}".format(currentNode.g, currentNode.h, currentNode.f))
@@ -569,6 +668,13 @@ def build_tree(graph, currentNode, limit, numberOfSolutions, fout, startTime, ti
     return numberOfSolutions, minim, currentlyGen
 
 def write_to_file(fout, currentNode, startTime, maxGenerated, totalGenerated):
+    """
+    Writes the necessary modularized output to files
+    currentNode - we get the path from here
+    startTime - runtime since start
+    maxGenerated - max nodes in memory at a time
+    totalGenerated - the total number of nodes generated in the respective algorithm
+    """
     fout.write("Solution: ")
     fout.write(currentNode.showPath() + '\n')
     fout.write("Length: {}\n".format(currentNode.index + 1))
@@ -580,6 +686,10 @@ def write_to_file(fout, currentNode, startTime, maxGenerated, totalGenerated):
 
 
 def prelucrate_data(inData):
+    """
+    Prelucrates the simple data that we read from files
+    returns the data prepared for the graph
+    """
     data = copy.deepcopy(inData)
     upset = {}
     nodes = {}
@@ -605,6 +715,7 @@ def main():
     if (len(sys.argv) < 4):
         print("Wrong number of arguments!")
         return
+    # getting line arguments
     folderIn = sys.argv[1]
     folderOut = sys.argv[2]
     NSol = int(sys.argv[3])
@@ -618,11 +729,14 @@ def main():
 
     # Data in
     listFolder = os.listdir(folderIn)
+    # We iterate through all the files and solve for each
     for file in listFolder:
         fileName = file.split(".")[0]
         foutUCS = open("./{}/{}_1_UCS.out".format(folderOut, fileName), "w")
         data = read_file("./{}/{}".format(folderIn, file))
         nodes, matrix, start, goal, questioned, upset, timeQuestioned = prelucrate_data(data)
+
+        # UCS program
         graphUCS = Graph(
                 nodes,
                 matrix,
@@ -639,6 +753,7 @@ def main():
         heuristics = ["naive", "admissible1", "admissible2", "inadmissible"]
         fileWriting = "w"
 
+        # for A*'s we iterate through the heuristic and solve for each
         for heurisitic in heuristics:
             graphAS = Graph(
                     nodes,
