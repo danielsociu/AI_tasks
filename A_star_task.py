@@ -1,11 +1,13 @@
 import time
 import random
 import re
+import math
 import sys
 import os
 import copy
 
 flatten = lambda t: [item for sublist in t for item in sublist]
+printGlobally = False
 
 def read_file(path):
     """
@@ -14,6 +16,8 @@ def read_file(path):
         upset: the list of pairs of upset kids
         questioned: the list of quoestioned kids
         message: the starting and goal point of message}
+    Returns:
+        The data from the files
     """
     f = open(path, "r")
     d = f.read()
@@ -116,6 +120,36 @@ class Graph:
         """
         return self.nodes[name]
 
+    def check_upset(self, id1, id2):
+        if id1 == 'liber' or id2 == 'liber':
+            return True
+        if id2 in self.upset[id1]:
+            return True
+        return False
+
+    def check_solvable(self):
+        posStart = self.getIndexNode(self.start)
+        posGoal = self.getIndexNode(self.goal)
+        starty = (min(posStart["y"], posGoal['y']) // 2) * 2 
+        endy = (max(posStart["y"], posGoal['y']) // 2) * 2
+        for i in range(starty + 1, endy, 2):
+            length = len(self.matrix) - 1
+            if self.check_upset(self.matrix[length][i], self.matrix[length][i + 1])\
+                    and self.check_upset(self.matrix[length - 1][i], self.matrix[length - 1][i + 1]):
+                return False
+        if starty != endy:
+            for i in range(posStart['x'], len(self.matrix) - 2):
+                j = posStart['y'] - (posStart['y'] % 2)
+                if self.check_upset(self.matrix[i][j], self.matrix[i + 1][j]) \
+                        and self.check_upset(self.matrix[i][j + 1], self.matrix[i + 1][j + 1]):
+                    return False
+            for i in range(posGoal['x'], len(self.matrix) - 2):
+                j = posGoal['y'] - (posGoal['y'] % 2)
+                if self.check_upset(self.matrix[i][j], self.matrix[i + 1][j]) \
+                        and self.check_upset(self.matrix[i][j + 1], self.matrix[i + 1][j + 1]):
+                    return False
+        return True
+
     def test_goal(self, currentNode):
         return self.goal == currentNode.id
 
@@ -186,7 +220,31 @@ class Graph:
             return 1
         if self.goal == name:
             return 0
-        return 1
+        if self.nameHeuristic == "admissible1":
+            val = 0
+            pos = self.getIndexNode(name)
+            posGoal = self.getIndexNode(name)
+            if posGoal["y"] // 2 != pos["y"] // 2:
+                val += math.sqrt((posGoal["y"] - pos["y"]) ** 2 + (posGoal["x"] - pos["x"]) ** 2)
+            else:
+                val += abs(posGoal['x'] - pos['x'])
+            return val
+        if self.nameHeuristic == "admissible2":
+            val = 0
+            pos = self.getIndexNode(name)
+            posGoal = self.getIndexNode(name)
+            val += abs(posGoal["y"] // 2 - pos["y"] // 2) * 2
+            if posGoal["y"] // 2 != pos["y"] // 2:
+                val += 2*abs(posGoal['x'] - pos['x'])
+            return val
+        if self.nameHeuristic == "inadmissible":
+            val = 0
+            pos = self.getIndexNode(name)
+            val += pos['x'] * 2
+            val += pos['y']
+            return val
+
+
     
     def isInPerimeter(self, currentNode, newPosition):
         """
@@ -222,6 +280,8 @@ def uniform_cost_search(graph, numberOfSolutions, fout, startTime, timeoutTime):
     total_generated = 1
     max_generated = 1
     firstQuestioned = None
+    if graph.check_solvable() == False:
+        fout.write("~~~~~~~~~~~~~~ No solutions ~~~~~~~~~~~~~~~\n")
     if len(graph.questioned) > 0: 
         firstQuestioned = graph.questioned[0]
     que = [
@@ -237,24 +297,27 @@ def uniform_cost_search(graph, numberOfSolutions, fout, startTime, timeoutTime):
             )]
 
     while len(que) > 0:
-        print("Current queue:")
-        print(que)
+        if printGlobally:
+            print("Current queue:")
+            print(que)
         currentNode = que.pop(0)
 
         if graph.test_goal(currentNode):
             write_to_file(fout, currentNode, startTime, max_generated, total_generated)
             max_generated = len(que)
-            print("---------------------------------------------------")
-            print("Solution: ", end = "")
-            print(currentNode.showPath())
-            print ("Cost: {}".format(currentNode.g))
+            if printGlobally:
+                print("---------------------------------------------------")
+                print("Solution: ", end = "")
+                print(currentNode.showPath())
+                print ("Cost: {}".format(currentNode.g))
             numberOfSolutions -= 1
             # input()
             if numberOfSolutions == 0:
                 return
 
         if timeoutTime < (round(1000*(time.time() - timeout))):
-            print("Timeout exceeded")
+            if printGlobally:
+                print("Timeout exceeded")
             fout.write("~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~\n")
             return
 
@@ -279,6 +342,8 @@ def a_star(graph, numberOfSolutions, fout, startTime, timeoutTime):
     total_generated = 1
     max_generated = 1
     firstQuestioned = None
+    if graph.check_solvable() == False:
+        fout.write("~~~~~~~~~~~~~~ No solutions ~~~~~~~~~~~~~~~\n")
     if len(graph.questioned) > 0: 
         firstQuestioned = graph.questioned[0]
     que = [
@@ -294,24 +359,27 @@ def a_star(graph, numberOfSolutions, fout, startTime, timeoutTime):
             )]
 
     while len(que) > 0:
-        print("Current queue:")
-        print(que)
+        if printGlobally: 
+            print("Current queue:")
+            print(que)
         currentNode = que.pop(0)
 
         if graph.test_goal(currentNode):
             write_to_file(fout, currentNode, startTime, max_generated, total_generated)
             max_generated = len(que)
-            print("---------------------------------------------------")
-            print("Solution: ", end = "")
-            print(currentNode.showPath())
-            print ("Cost: {}".format(currentNode.g))
+            if printGlobally: 
+                print("---------------------------------------------------")
+                print("Solution: ", end = "")
+                print(currentNode.showPath())
+                print ("Cost: {}".format(currentNode.g))
             numberOfSolutions -= 1
             # input()
             if numberOfSolutions == 0:
                 return
 
         if timeoutTime < (round(1000*(time.time() - timeout))):
-            print("Timeout exceeded")
+            if printGlobally: 
+                print("Timeout exceeded")
             fout.write("~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~\n")
             return
 
@@ -336,6 +404,8 @@ def a_star_optimised(graph, fout, startTime, timeoutTime):
     total_generated = 1
     max_generated = 1
     firstQuestioned = None
+    if graph.check_solvable() == False:
+        fout.write("~~~~~~~~~~~~~~ No solutions ~~~~~~~~~~~~~~~\n")
     if len(graph.questioned) > 0: 
         firstQuestioned = graph.questioned[0]
     que = [
@@ -352,23 +422,26 @@ def a_star_optimised(graph, fout, startTime, timeoutTime):
 
     que_closed = []
     while len(que) > 0:
-        print("Current queue:")
-        print(que)
+        if printGlobally: 
+            print("Current queue:")
+            print(que)
         currentNode = que.pop(0)
         que_closed.append(currentNode)
 
         if graph.test_goal(currentNode):
             write_to_file(fout, currentNode, startTime, max_generated, total_generated)
             max_generated = len(que)
-            print("---------------------------------------------------")
-            print("Solution: ", end = "")
-            print(currentNode.showPath())
-            print ("Cost: {}".format(currentNode.g))
+            if printGlobally: 
+                print("---------------------------------------------------")
+                print("Solution: ", end = "")
+                print(currentNode.showPath())
+                print ("Cost: {}".format(currentNode.g))
             # input()
             return
 
         if timeoutTime < (round(1000*(time.time() - timeout))):
-            print("Timeout exceeded")
+            if printGlobally: 
+                print("Timeout exceeded")
             fout.write("~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~\n")
             return
 
@@ -413,6 +486,8 @@ def IDA_star(graph, numberOfSolutions, fout, startTime, timeoutTime):
     timeout = time.time()
     total_generated = 1
     firstQuestioned = None
+    if graph.check_solvable() == False:
+        fout.write("~~~~~~~~~~~~~~ No solutions ~~~~~~~~~~~~~~~\n")
     if len(graph.questioned) > 0: 
         firstQuestioned = graph.questioned[0]
     initialNode = NodeTransition(
@@ -428,38 +503,44 @@ def IDA_star(graph, numberOfSolutions, fout, startTime, timeoutTime):
     limit = initialNode.f
 
     while True:
-        print("Limit of tree depth: ", limit)
+        if printGlobally: 
+            print("Limit of tree depth: ", limit)
         numberOfSolutions, result, generated = build_tree(graph, initialNode, limit, numberOfSolutions, fout, startTime, timeout, timeoutTime, 0, total_generated)
         total_generated += generated
         if result == "done":
             break
         if result == float("inf"):
-            print("No solutions found")
+            if printGlobally: 
+                print("No solutions found")
             break
 
         if timeoutTime < (round(1000*(time.time() - timeout))) or result == "timeout":
-            print("Timeout exceeded")
+            if printGlobally: 
+                print("Timeout exceeded")
             fout.write("~~~~~~~~~~~~~~ Timeout exceeded ~~~~~~~~~~~~~~~\n")
             return
 
         limit = result
-        print(">>>>> New limit: {} <<<<<<".format(limit))
+        if printGlobally: 
+            print(">>>>> New limit: {} <<<<<<".format(limit))
         # input()
 
 def build_tree(graph, currentNode, limit, numberOfSolutions, fout, startTime, timeout, timeoutTime,currently_generated, total_generated):
-    print("Reached: ", currentNode)
+    if printGlobally: 
+        print("Reached: ", currentNode)
+        print("G and H and F: {} {} {}".format(currentNode.g, currentNode.h, currentNode.f))
+        print("test_goal: ", graph.test_goal(currentNode))
     currentlyGen = 0
-    print("G and H and F: {} {} {}".format(currentNode.g, currentNode.h, currentNode.f))
-    print("test_goal: ", graph.test_goal(currentNode))
     if currentNode.f > limit:
         return numberOfSolutions, currentNode.f, 0
     if graph.test_goal(currentNode) and currentNode.f == limit:
         write_to_file(fout, currentNode, startTime, currently_generated, total_generated)
-        print("---------------------------------------------------")
-        print("Solution: ", end = "")
-        print(currentNode.showPath())
-        print("Limit: {}".format(limit))
-        print ("Cost: {}".format(currentNode.g))
+        if printGlobally: 
+            print("---------------------------------------------------")
+            print("Solution: ", end = "")
+            print(currentNode.showPath())
+            print("Limit: {}".format(limit))
+            print ("Cost: {}".format(currentNode.g))
         # input()
         numberOfSolutions -= 1
         if numberOfSolutions == 0:
@@ -478,10 +559,12 @@ def build_tree(graph, currentNode, limit, numberOfSolutions, fout, startTime, ti
             return 0, "done", currentlyGen
         if result == "timeout":
             return 0, "timeout", currentlyGen
-        print("Comparing ", result, " with ", minim)
+        if printGlobally: 
+            print("Comparing ", result, " with ", minim)
         if result < minim:
             minim = result
-            print("New minim: ", minim)
+            if printGlobally: 
+                print("New minim: ", minim)
     currentlyGen += len(successors)
     return numberOfSolutions, minim, currentlyGen
 
@@ -506,8 +589,14 @@ def prelucrate_data(inData):
                 upset[data["data"][i][j]] = []
                 nodes[data["data"][i][j]] = {"x": i, "y": j}
     for elem in data["upset"]:
-        upset[elem[0]].append(elem[1])
-        upset[elem[1]].append(elem[0])
+        if elem[0] not in upset.keys():
+            upset[elem[0]] = [elem[1]]
+        else:
+            upset[elem[0]].append(elem[1])
+        if elem[1] not in upset.keys():
+            upset[elem[1]] = [elem[0]]
+        else:
+            upset[elem[1]].append(elem[0])
     timeQuestioned = int(data["questioned"][0])
     questioned = list(data["questioned"][1:])
     return nodes, data["data"], data["message"][0], data["message"][1], questioned, upset, timeQuestioned
@@ -529,10 +618,9 @@ def main():
 
     # Data in
     listFolder = os.listdir(folderIn)
-    data = read_file("./input/1_in.in")
     for file in listFolder:
         fileName = file.split(".")[0]
-        fout = open("./{}/{}.out".format(folderOut, fileName), "w")
+        foutUCS = open("./{}/{}_1_UCS.out".format(folderOut, fileName), "w")
         data = read_file("./{}/{}".format(folderIn, file))
         nodes, matrix, start, goal, questioned, upset, timeQuestioned = prelucrate_data(data)
         graphUCS = Graph(
@@ -545,10 +633,11 @@ def main():
                 timeQuestioned,
                 "naive"
                 )
-        fout.write(">>>>>> UCS solutions <<<<<<<<\n")
-        uniform_cost_search(graphUCS, NSol, fout, startTimer, timeoutTime)
+        foutUCS.write(">>>>>> UCS solutions <<<<<<<<\n")
+        uniform_cost_search(graphUCS, NSol, foutUCS, startTimer, timeoutTime)
 
         heuristics = ["naive", "admissible1", "admissible2", "inadmissible"]
+        fileWriting = "w"
 
         for heurisitic in heuristics:
             graphAS = Graph(
@@ -581,12 +670,16 @@ def main():
                     timeQuestioned,
                     heurisitic
                     )
-            fout.write(">>>>>> A star solutions: " + heurisitic + " <<<<<<<<\n")
-            a_star(graphAS, NSol, fout, startTimer, timeoutTime)
-            fout.write(">>>>>> A star optimised solutions: " + heurisitic + " <<<<<<<<\n")
-            a_star_optimised(graphASO, fout, startTimer, timeoutTime)
-            fout.write(">>>>>> IDA solutions: " + heurisitic + " <<<<<<<<\n")
-            IDA_star(graphIDA, NSol, fout, startTimer, timeoutTime)
+            foutAS = open("./{}/{}_2_AS.out".format(folderOut, fileName), fileWriting)
+            foutAS.write("\n>>>>>> A star solutions: " + heurisitic + " <<<<<<<<\n")
+            a_star(graphAS, NSol, foutAS, startTimer, timeoutTime)
+            foutASO = open("./{}/{}_3_ASO.out".format(folderOut, fileName), fileWriting)
+            foutASO.write("\n>>>>>> A star optimised solutions: " + heurisitic + " <<<<<<<<\n")
+            a_star_optimised(graphASO, foutASO, startTimer, timeoutTime)
+            foutIDA = open("./{}/{}_4_IDA.out".format(folderOut, fileName), fileWriting)
+            foutIDA.write("\n>>>>>> IDA solutions: " + heurisitic + " <<<<<<<<\n")
+            IDA_star(graphIDA, NSol, foutIDA, startTimer, timeoutTime)
+            fileWriting = "a"
     # we still need to do some data precomputations
 
     

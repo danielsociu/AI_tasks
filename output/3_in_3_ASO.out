@@ -1,0 +1,36 @@
+
+>>>>>> A star optimised solutions: naive <<<<<<<<
+Solution: 1.ionel > 2.alina v 3.diana v 4.costin v 5.simona < 6.luiza v 7.mihnea > 8.razvan v 9.andrei >> 10.oana ^ 11.radu > 12.patricia v 13.victor v 14.nicoleta >> 15.maria > 16.gabi ^ 17.dorel ^ 18.elena < 19.gigel ^ 20.tamara > 21.dragos
+Length: 21
+Cost: 15
+Time: 6904
+Max nodes: 4
+Total nodes: 37
+---------------------------------------------------
+
+>>>>>> A star optimised solutions: admissible1 <<<<<<<<
+Solution: 1.ionel > 2.alina v 3.diana v 4.costin v 5.simona < 6.luiza v 7.mihnea > 8.razvan v 9.andrei >> 10.oana ^ 11.radu > 12.patricia v 13.victor v 14.nicoleta >> 15.maria > 16.gabi ^ 17.dorel ^ 18.elena < 19.gigel ^ 20.tamara > 21.dragos
+Length: 21
+Cost: 15
+Time: 6922
+Max nodes: 4
+Total nodes: 37
+---------------------------------------------------
+
+>>>>>> A star optimised solutions: admissible2 <<<<<<<<
+Solution: 1.ionel > 2.alina v 3.diana v 4.costin v 5.simona < 6.luiza v 7.mihnea > 8.razvan v 9.andrei >> 10.oana ^ 11.radu > 12.patricia v 13.victor v 14.nicoleta >> 15.maria > 16.gabi ^ 17.dorel ^ 18.elena < 19.gigel ^ 20.tamara > 21.dragos
+Length: 21
+Cost: 15
+Time: 6941
+Max nodes: 4
+Total nodes: 37
+---------------------------------------------------
+
+>>>>>> A star optimised solutions: inadmissible <<<<<<<<
+Solution: 1.ionel > 2.alina v 3.diana v 4.costin v 5.simona < 6.luiza v 7.mihnea > 8.razvan v 9.andrei >> 10.oana ^ 11.radu > 12.patricia v 13.victor v 14.nicoleta >> 15.maria > 16.gabi ^ 17.dorel ^ 18.elena < 19.gigel ^ 20.tamara > 21.dragos
+Length: 21
+Cost: 15
+Time: 6960
+Max nodes: 6
+Total nodes: 52
+---------------------------------------------------
