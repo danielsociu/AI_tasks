@@ -162,7 +162,6 @@ class Interface:
                 wall[0].drawCell(index = wall[1])
         pygame.display.update()
 
-
 class Game:
     GMIN = None
     GMAX = None
@@ -192,9 +191,25 @@ class Game:
         elif final == self.__class__.GMIN:
             return -(self.__class__.max_score + depth)
         else:
-            piece = self.pieces[self.__class__.GMAX]
+            gmaxPlayer = self.pieces[self.__class__.GMAX]
+            gminPlayer = self.pieces[self.__class__.GMIN]
             # print ((self.semiLee(self.__class__.GMIN) , self.semiLee(self.__class__.GMAX)))
-            return (self.semiLee(self.__class__.GMIN) - self.semiLee(self.__class__.GMAX) )
+            return (self.semiLee(self.__class__.GMIN) - self.semiLee(self.__class__.GMAX) + 
+                    (gmaxPlayer.moves - gminPlayer.moves)
+                )
+
+    def estimateScore2(self, depth):
+        final = self.final()
+        if final == self.__class__.GMAX:
+            return self.__class__.max_score + depth
+        elif final == self.__class__.GMIN:
+            return -(self.__class__.max_score + depth)
+        else:
+            gmaxPlayer = self.pieces[self.__class__.GMAX]
+            gminPlayer = self.pieces[self.__class__.GMIN]
+            return (abs(gminPlayer.line - gminPlayer.goal) - abs(gmaxPlayer.line - gmaxPlayer.goal) +
+                    (gmaxPlayer.moves - gminPlayer.moves)
+                    )
 
     @classmethod
     def getOppositePlayer(cls, player):
@@ -499,9 +514,12 @@ class State:
             states.append(State(game, self.game.getOppositePlayer(self.currentPlayer), self.depth - 1, father = self))
         return states
 
-def min_max(state):
+def min_max(state, scoring = 1):
     if state.depth == 0  or state.game.final():
-        state.score = state.game.estimateScore(state.depth)
+        if scoring == 1:
+            state.score = state.game.estimateScore(state.depth)
+        else:
+            state.score = state.game.estimateScore2(state.depth)
         return state
     state.possibleMoves = state.moves()
     score_moves = [min_max(move) for move in state.possibleMoves]
@@ -513,9 +531,12 @@ def min_max(state):
     state.score = state.chosenState.score
     return state
 
-def alpha_beta(alpha, beta, state):
+def alpha_beta(alpha, beta, state, scoring = 1):
     if state.depth == 0  or state.game.final():
-        state.score = state.game.estimateScore(state.depth)
+        if scoring == 1:
+            state.score = state.game.estimateScore(state.depth)
+        else:
+            state.score = state.game.estimateScore2(state.depth)
         return state
 
     if alpha > beta:
@@ -724,107 +745,395 @@ def main():
 
     current_state = State(game, "red", MAX_DEPTH)
     nextCells = []
+    maxTimeComputer = 0
+    minTimeComputer = 100000
+    totalTimeComputer = 0
+    movesComputer = 0
+    start_time = None
+    fontObject = pygame.font.SysFont('arial', 20)
 
-    while True:
-        if (current_state.currentPlayer == game.GMIN):
-            for ev in pygame.event.get():
-                if ev.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                # Pretty laggy if you move mouse fast, need multithreading
-                # if ev.type == pygame.MOUSEMOTION:
-                #     pos = pygame.mouse.get_pos()
-                #     wallFound = []
-                #     for i, line in enumerate(current_state.game.interface.cellMatrix):
-                #         for j, cell in enumerate(line):
-                #             for k, wall in enumerate(cell.wall):
-                #                 if wall  and wall.collidepoint(pos):
-                #                     wallFound.append((cell, k, wall, i, j))
-                #     affectedCells = []
-                #     if len (wallFound) == 2:
-                #         affectedCells = current_state.game.getWallContinuation(wallFound)
-                #     if len(affectedCells) == 4 and not current_state.game.checkWallBlock(affectedCells):
-                #         current_state.game.drawGameScreen(walls = affectedCells)
-                #         # thread.start_new_thread(current_state.game.drawGameScreen, (affectedCells))
-                #     else:
-                #         current_state.game.drawGameScreen()
-                if ev.type == pygame.MOUSEBUTTONDOWN and nextCells:
-                    pos = pygame.mouse.get_pos()
-                    for cell in nextCells:
-                        if cell.rectangle.collidepoint(pos):
-                            user = current_state.game.pieces[Game.GMIN]
-                            user.line = cell.line
-                            user.column = cell.column
-                            nextCells = []
-                            current_state.game.drawGameScreen()
-                            current_state.currentPlayer = Game.GMAX
-                            if user.line == user.goal:
-                                print(user.name + " won")
-                                return
-                            break
-                    nextCells = []
+    if game_mode == "pp":
+        while True:
+            if (current_state.currentPlayer == game.GMIN):
+                if not start_time:
                     current_state.game.drawGameScreen()
-                elif ev.type == pygame.MOUSEBUTTONDOWN:
-                    finished = False
-                    pos = pygame.mouse.get_pos()
-                    wallFound = []
-                    currentPlayer = current_state.game.pieces[current_state.currentPlayer]
-                    oppositePlayer = current_state.game.pieces[Game.GMAX]
-                    if currentPlayer.moves > 0:
-                        for i, line in enumerate(current_state.game.interface.cellMatrix):
-                            for j, cell in enumerate(line):
-                                for k, wall in enumerate(cell.wall):
-                                    if wall  and wall.collidepoint(pos):
-                                        wallFound.append((cell, k, wall, i, j))
-                        affectedCells = []
-                        if len (wallFound) == 2:
-                            affectedCells = current_state.game.getWallContinuation(wallFound)
-                        if len(affectedCells) == 4 and not current_state.game.checkWallBlock(affectedCells):
-                            finished = True
-                            currentPlayer.moves -= 1
-                            for (cell, index, wall, i, j) in affectedCells:
-                                pygame.draw.rect(current_state.game.interface.screen, cell.lineColor, wall)
-                                cell.code |= 2 ** index
-                        if finished:
-                            current_state.game.drawGameScreen()
-                            current_state.currentPlayer = Game.GMAX
-                            continue
+                    display_turn = fontObject.render("To move: {}".format(current_state.currentPlayer), True, (255,0,0))
+                    screen.blit(display_turn, display_turn.get_rect())
+                    pygame.display.update()
+                    start_time = int(round(time.time() * 1000))
+                for ev in pygame.event.get():
+                    if ev.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if ev.type == pygame.MOUSEBUTTONDOWN and nextCells:
+                        pos = pygame.mouse.get_pos()
+                        for cell in nextCells:
+                            if cell.rectangle.collidepoint(pos):
+                                user = current_state.game.pieces[current_state.currentPlayer]
+                                user.line = cell.line
+                                user.column = cell.column
+                                nextCells = []
+                                current_state.game.drawGameScreen()
+                                current_state.currentPlayer = current_state.game.getOppositePlayer(current_state.currentPlayer)
+                                workTime = (int(round(time.time() * 1000)) - start_time)
+                                print ("User moved in: " + str(workTime))
+                                start_time = None
+                                if user.line == user.goal:
+                                    print(user.name + " won")
+                                    display_turn = fontObject.render("{} WON".format(current_state.currentPlayer), True, (255,0,0))
+                                    screen.blit(display_turn, display_turn.get_rect())
+                                    pygame.display.update()
+                                    print("Computer minim: {}".format(minTimeComputer))
+                                    print("Computer max: {}".format(maxTimeComputer))
+                                    print("Computer total: {}".format(totalTimeComputer))
+                                    print("Computer median: {}".format(totalTimeComputer/movesComputer))
+                                    return
+                                break
+                        nextCells = []
+                        current_state.game.drawGameScreen()
+                        screen.blit(display_turn, display_turn.get_rect())
+                        pygame.display.update()
+                    elif ev.type == pygame.MOUSEBUTTONDOWN:
+                        finished = False
+                        pos = pygame.mouse.get_pos()
+                        wallFound = []
+                        currentPlayer = current_state.game.pieces[current_state.currentPlayer]
+                        oppositePlayer = current_state.game.pieces[Game.GMAX]
+                        if currentPlayer.moves > 0:
+                            for i, line in enumerate(current_state.game.interface.cellMatrix):
+                                for j, cell in enumerate(line):
+                                    for k, wall in enumerate(cell.wall):
+                                        if wall  and wall.collidepoint(pos):
+                                            wallFound.append((cell, k, wall, i, j))
+                            affectedCells = []
+                            if len (wallFound) == 2:
+                                affectedCells = current_state.game.getWallContinuation(wallFound)
+                            if len(affectedCells) == 4 and not current_state.game.checkWallBlock(affectedCells):
+                                finished = True
+                                currentPlayer.moves -= 1
+                                for (cell, index, wall, i, j) in affectedCells:
+                                    pygame.draw.rect(current_state.game.interface.screen, cell.lineColor, wall)
+                                    cell.code |= 2 ** index
+                            if finished:
+                                current_state.game.drawGameScreen()
+                                screen.blit(display_turn, display_turn.get_rect())
+                                pygame.display.update()
+                                current_state.currentPlayer = current_state.game.getOppositePlayer(current_state.currentPlayer)
+                                workTime = (int(round(time.time() * 1000)) - start_time)
+                                print ("User moved in: " + str(workTime))
+                                start_time = None
+                                continue
 
-                    user = current_state.game.pieces[Game.GMIN]
-                    userCell = current_state.game.interface.cellMatrix[user.line][user.column]
-                    if not finished and userCell.rectangle.collidepoint(pos):
-                        nextCells = current_state.game.getNextCells(Game.GMIN)
-                        if nextCells:
-                            current_state.game.drawGameScreen(highlightCells = nextCells)
-        else:
-            start_time = int(round(time.time() * 1000))
-            if algorith_type == "minimax":
-                new_state = min_max(current_state)
+                        user = current_state.game.pieces[current_state.currentPlayer]
+                        userCell = current_state.game.interface.cellMatrix[user.line][user.column]
+                        if not finished and userCell.rectangle.collidepoint(pos):
+                            nextCells = current_state.game.getNextCells(current_state.currentPlayer)
+                            if nextCells:
+                                current_state.game.drawGameScreen(highlightCells = nextCells)
+                                screen.blit(display_turn, display_turn.get_rect())
+                                pygame.display.update()
             else:
-                new_state = alpha_beta(-100, 100, current_state)
-            current_state.game.blue.line = new_state.chosenState.game.blue.line
-            current_state.game.blue.column = new_state.chosenState.game.blue.column
-            current_state.game.blue.moves = new_state.chosenState.game.blue.moves
-            current_state.game.red.line = new_state.chosenState.game.red.line
-            current_state.game.red.column = new_state.chosenState.game.red.column
-            current_state.game.red.moves = new_state.chosenState.game.red.moves
-            for i, line in enumerate (new_state.chosenState.game.interface.cellMatrix):
-                current_line = current_state.game.interface.cellMatrix[i]
-                for j, cell in enumerate(line):
-                    if (current_line[j].code != cell.code):
-                        aux = byte_to_power(cell.code - current_line[j].code)
-                        pygame.draw.rect(
-                            current_state.game.interface.screen,
-                            current_line[j].lineColor,
-                            current_line[j].wall[aux]
-                            )
-                        current_line[j].code = cell.code
-            current_state.game.drawGameScreen()
-            if (current_state.game.final()):
-                print(Game.GMAX + " won")
-                return
-            current_state.currentPlayer = Game.GMIN
+                if not start_time:
+                    current_state.game.drawGameScreen()
+                    display_turn = fontObject.render("To move: {}".format(current_state.currentPlayer), True, (255,0,0))
+                    screen.blit(display_turn, display_turn.get_rect())
+                    pygame.display.update()
+                    start_time = int(round(time.time() * 1000))
+                for ev in pygame.event.get():
+                    if ev.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if ev.type == pygame.MOUSEBUTTONDOWN and nextCells:
+                        pos = pygame.mouse.get_pos()
+                        for cell in nextCells:
+                            if cell.rectangle.collidepoint(pos):
+                                user = current_state.game.pieces[current_state.currentPlayer]
+                                user.line = cell.line
+                                user.column = cell.column
+                                nextCells = []
+                                current_state.game.drawGameScreen()
+                                current_state.currentPlayer = current_state.game.getOppositePlayer(current_state.currentPlayer)
+                                workTime = (int(round(time.time() * 1000)) - start_time)
+                                print ("User moved in: " + str(workTime))
+                                start_time = None
+                                if user.line == user.goal:
+                                    print(user.name + " won")
+                                    display_turn = fontObject.render("{} WON".format(current_state.currentPlayer), True, (255,0,0))
+                                    screen.blit(display_turn, display_turn.get_rect())
+                                    pygame.display.update()
+                                    print("Computer minim: {}".format(minTimeComputer))
+                                    print("Computer max: {}".format(maxTimeComputer))
+                                    print("Computer total: {}".format(totalTimeComputer))
+                                    print("Computer median: {}".format(totalTimeComputer/movesComputer))
+                                    return
+                                break
+                        nextCells = []
+                        current_state.game.drawGameScreen()
+                        screen.blit(display_turn, display_turn.get_rect())
+                        pygame.display.update()
+                    elif ev.type == pygame.MOUSEBUTTONDOWN:
+                        finished = False
+                        pos = pygame.mouse.get_pos()
+                        wallFound = []
+                        currentPlayer = current_state.game.pieces[current_state.currentPlayer]
+                        oppositePlayer = current_state.game.pieces[Game.GMAX]
+                        if currentPlayer.moves > 0:
+                            for i, line in enumerate(current_state.game.interface.cellMatrix):
+                                for j, cell in enumerate(line):
+                                    for k, wall in enumerate(cell.wall):
+                                        if wall  and wall.collidepoint(pos):
+                                            wallFound.append((cell, k, wall, i, j))
+                            affectedCells = []
+                            if len (wallFound) == 2:
+                                affectedCells = current_state.game.getWallContinuation(wallFound)
+                            if len(affectedCells) == 4 and not current_state.game.checkWallBlock(affectedCells):
+                                finished = True
+                                currentPlayer.moves -= 1
+                                for (cell, index, wall, i, j) in affectedCells:
+                                    pygame.draw.rect(current_state.game.interface.screen, cell.lineColor, wall)
+                                    cell.code |= 2 ** index
+                            if finished:
+                                current_state.game.drawGameScreen()
+                                screen.blit(display_turn, display_turn.get_rect())
+                                pygame.display.update()
+                                current_state.currentPlayer = current_state.game.getOppositePlayer(current_state.currentPlayer)
+                                workTime = (int(round(time.time() * 1000)) - start_time)
+                                print ("User moved in: " + str(workTime))
+                                start_time = None
+                                continue
 
+                        user = current_state.game.pieces[current_state.currentPlayer]
+                        userCell = current_state.game.interface.cellMatrix[user.line][user.column]
+                        if not finished and userCell.rectangle.collidepoint(pos):
+                            nextCells = current_state.game.getNextCells(current_state.currentPlayer)
+                            if nextCells:
+                                current_state.game.drawGameScreen(highlightCells = nextCells)
+                                screen.blit(display_turn, display_turn.get_rect())
+                                pygame.display.update()
+
+    elif game_mode == "pc":
+        while True:
+            if (current_state.currentPlayer == game.GMIN):
+                if not start_time:
+                    current_state.game.drawGameScreen()
+                    display_turn = fontObject.render("To move: {}".format(current_state.currentPlayer), True, (255,0,0))
+                    screen.blit(display_turn, display_turn.get_rect())
+                    pygame.display.update()
+                    start_time = int(round(time.time() * 1000))
+                for ev in pygame.event.get():
+                    if ev.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if ev.type == pygame.MOUSEBUTTONDOWN and nextCells:
+                        pos = pygame.mouse.get_pos()
+                        for cell in nextCells:
+                            if cell.rectangle.collidepoint(pos):
+                                user = current_state.game.pieces[current_state.currentPlayer]
+                                user.line = cell.line
+                                user.column = cell.column
+                                nextCells = []
+                                current_state.game.drawGameScreen()
+                                current_state.currentPlayer = current_state.game.getOppositePlayer(current_state.currentPlayer)
+                                workTime = (int(round(time.time() * 1000)) - start_time)
+                                print ("User moved in: " + str(workTime))
+                                start_time = None
+                                if user.line == user.goal:
+                                    print(user.name + " won")
+                                    display_turn = fontObject.render("{} WON".format(current_state.currentPlayer), True, (255,0,0))
+                                    screen.blit(display_turn, display_turn.get_rect())
+                                    pygame.display.update()
+                                    print("Computer minim: {}".format(minTimeComputer))
+                                    print("Computer max: {}".format(maxTimeComputer))
+                                    print("Computer total: {}".format(totalTimeComputer))
+                                    print("Computer median: {}".format(totalTimeComputer/movesComputer))
+                                    return
+                                break
+                        nextCells = []
+                        current_state.game.drawGameScreen()
+                        screen.blit(display_turn, display_turn.get_rect())
+                        pygame.display.update()
+                    elif ev.type == pygame.MOUSEBUTTONDOWN:
+                        finished = False
+                        pos = pygame.mouse.get_pos()
+                        wallFound = []
+                        currentPlayer = current_state.game.pieces[current_state.currentPlayer]
+                        if currentPlayer.moves > 0:
+                            for i, line in enumerate(current_state.game.interface.cellMatrix):
+                                for j, cell in enumerate(line):
+                                    for k, wall in enumerate(cell.wall):
+                                        if wall  and wall.collidepoint(pos):
+                                            wallFound.append((cell, k, wall, i, j))
+                            affectedCells = []
+                            if len (wallFound) == 2:
+                                affectedCells = current_state.game.getWallContinuation(wallFound)
+                            if len(affectedCells) == 4 and not current_state.game.checkWallBlock(affectedCells):
+                                finished = True
+                                currentPlayer.moves -= 1
+                                for (cell, index, wall, i, j) in affectedCells:
+                                    pygame.draw.rect(current_state.game.interface.screen, cell.lineColor, wall)
+                                    cell.code |= 2 ** index
+                            if finished:
+                                current_state.game.drawGameScreen()
+                                screen.blit(display_turn, display_turn.get_rect())
+                                pygame.display.update()
+                                current_state.currentPlayer = current_state.game.getOppositePlayer(current_state.currentPlayer)
+                                workTime = (int(round(time.time() * 1000)) - start_time)
+                                print ("User moved in: " + str(workTime))
+                                start_time = None
+                                continue
+
+                        user = current_state.game.pieces[current_state.currentPlayer]
+                        userCell = current_state.game.interface.cellMatrix[user.line][user.column]
+                        if not finished and userCell.rectangle.collidepoint(pos):
+                            nextCells = current_state.game.getNextCells(current_state.currentPlayer)
+                            if nextCells:
+                                current_state.game.drawGameScreen(highlightCells = nextCells)
+                                screen.blit(display_turn, display_turn.get_rect())
+                                pygame.display.update()
+            else:
+                display_turn = fontObject.render("To move: {}".format(current_state.currentPlayer), True, (255,0,0))
+                current_state.game.drawGameScreen()
+                screen.blit(display_turn, display_turn.get_rect())
+                pygame.display.update()
+                start_time = int(round(time.time() * 1000))
+                if algorith_type == "minimax":
+                    new_state = min_max(current_state)
+                else:
+                    new_state = alpha_beta(-100, 100, current_state)
+                current_state.game.blue.line = new_state.chosenState.game.blue.line
+                current_state.game.blue.column = new_state.chosenState.game.blue.column
+                current_state.game.blue.moves = new_state.chosenState.game.blue.moves
+                current_state.game.red.line = new_state.chosenState.game.red.line
+                current_state.game.red.column = new_state.chosenState.game.red.column
+                current_state.game.red.moves = new_state.chosenState.game.red.moves
+                for i, line in enumerate (new_state.chosenState.game.interface.cellMatrix):
+                    current_line = current_state.game.interface.cellMatrix[i]
+                    for j, cell in enumerate(line):
+                        if (current_line[j].code != cell.code):
+                            aux = byte_to_power(cell.code - current_line[j].code)
+                            pygame.draw.rect(
+                                current_state.game.interface.screen,
+                                current_line[j].lineColor,
+                                current_line[j].wall[aux]
+                                )
+                            current_line[j].code = cell.code
+                current_state.game.drawGameScreen()
+                workTime = (int(round(time.time() * 1000)) - start_time)
+                print ("Computer moved in: " + str(workTime))
+                maxTimeComputer = max(workTime, maxTimeComputer)
+                minTimeComputer = min(workTime, maxTimeComputer)
+                movesComputer += 1
+                totalTimeComputer += workTime
+                start_time = None
+                if (current_state.game.final()):
+                    print(Game.GMAX + " won")
+                    display_turn = fontObject.render("{} WON".format(current_state.currentPlayer), True, (255,0,0))
+                    screen.blit(display_turn, display_turn.get_rect())
+                    pygame.display.update()
+                    print("Computer minim: {}".format(minTimeComputer))
+                    print("Computer max: {}".format(maxTimeComputer))
+                    print("Computer total: {}".format(totalTimeComputer))
+                    print("Computer median: {}".format(totalTimeComputer/movesComputer))
+                    return
+                current_state.currentPlayer = current_state.game.getOppositePlayer(current_state.currentPlayer)
+    else:
+        while True:
+            if (current_state.currentPlayer == game.GMIN):
+                display_turn = fontObject.render("To move: {}".format(current_state.currentPlayer), True, (255,0,0))
+                current_state.game.drawGameScreen()
+                screen.blit(display_turn, display_turn.get_rect())
+                pygame.display.update()
+                start_time = int(round(time.time() * 1000))
+                if algorith_type == "minimax":
+                    new_state = min_max(current_state)
+                else:
+                    new_state = alpha_beta(-100, 100, current_state)
+                current_state.game.blue.line = new_state.chosenState.game.blue.line
+                current_state.game.blue.column = new_state.chosenState.game.blue.column
+                current_state.game.blue.moves = new_state.chosenState.game.blue.moves
+                current_state.game.red.line = new_state.chosenState.game.red.line
+                current_state.game.red.column = new_state.chosenState.game.red.column
+                current_state.game.red.moves = new_state.chosenState.game.red.moves
+                for i, line in enumerate (new_state.chosenState.game.interface.cellMatrix):
+                    current_line = current_state.game.interface.cellMatrix[i]
+                    for j, cell in enumerate(line):
+                        if (current_line[j].code != cell.code):
+                            aux = byte_to_power(cell.code - current_line[j].code)
+                            pygame.draw.rect(
+                                current_state.game.interface.screen,
+                                current_line[j].lineColor,
+                                current_line[j].wall[aux]
+                                )
+                            current_line[j].code = cell.code
+                workTime = (int(round(time.time() * 1000)) - start_time)
+                if workTime < 100:
+                    time.sleep(0.3)
+                current_state.game.drawGameScreen()
+                print ("Computer moved in: " + str(workTime))
+                maxTimeComputer = max(workTime, maxTimeComputer)
+                minTimeComputer = min(workTime, maxTimeComputer)
+                movesComputer += 1
+                totalTimeComputer += workTime
+                start_time = None
+                if (current_state.game.final()):
+                    print(Game.GMAX + " won")
+                    display_turn = fontObject.render("{} WON".format(current_state.currentPlayer), True, (255,0,0))
+                    screen.blit(display_turn, display_turn.get_rect())
+                    pygame.display.update()
+                    print("Computer minim: {}".format(minTimeComputer))
+                    print("Computer max: {}".format(maxTimeComputer))
+                    print("Computer total: {}".format(totalTimeComputer))
+                    print("Computer median: {}".format(totalTimeComputer/movesComputer))
+                    return
+                current_state.currentPlayer = current_state.game.getOppositePlayer(current_state.currentPlayer)
+            else:
+                display_turn = fontObject.render("To move: {}".format(current_state.currentPlayer), True, (255,0,0))
+                current_state.game.drawGameScreen()
+                screen.blit(display_turn, display_turn.get_rect())
+                pygame.display.update()
+                start_time = int(round(time.time() * 1000))
+                if algorith_type == "minimax":
+                    new_state = min_max(current_state, 2)
+                else:
+                    new_state = alpha_beta(-100, 100, current_state, 2)
+                current_state.game.blue.line = new_state.chosenState.game.blue.line
+                current_state.game.blue.column = new_state.chosenState.game.blue.column
+                current_state.game.blue.moves = new_state.chosenState.game.blue.moves
+                current_state.game.red.line = new_state.chosenState.game.red.line
+                current_state.game.red.column = new_state.chosenState.game.red.column
+                current_state.game.red.moves = new_state.chosenState.game.red.moves
+                for i, line in enumerate (new_state.chosenState.game.interface.cellMatrix):
+                    current_line = current_state.game.interface.cellMatrix[i]
+                    for j, cell in enumerate(line):
+                        if (current_line[j].code != cell.code):
+                            aux = byte_to_power(cell.code - current_line[j].code)
+                            pygame.draw.rect(
+                                current_state.game.interface.screen,
+                                current_line[j].lineColor,
+                                current_line[j].wall[aux]
+                                )
+                            current_line[j].code = cell.code
+                workTime = (int(round(time.time() * 1000)) - start_time)
+                if workTime < 100:
+                    time.sleep(0.3)
+                current_state.game.drawGameScreen()
+                print ("Computer moved in: " + str(workTime))
+                maxTimeComputer = max(workTime, maxTimeComputer)
+                minTimeComputer = min(workTime, maxTimeComputer)
+                movesComputer += 1
+                totalTimeComputer += workTime
+                start_time = None
+                if (current_state.game.final()):
+                    print(Game.GMAX + " won")
+                    display_turn = fontObject.render("{} WON".format(current_state.currentPlayer), True, (255,0,0))
+                    screen.blit(display_turn, display_turn.get_rect())
+                    pygame.display.update()
+                    print("Computer minim: {}".format(minTimeComputer))
+                    print("Computer max: {}".format(maxTimeComputer))
+                    print("Computer total: {}".format(totalTimeComputer))
+                    print("Computer median: {}".format(totalTimeComputer/movesComputer))
+                    return
+                current_state.currentPlayer = current_state.game.getOppositePlayer(current_state.currentPlayer)
 
 if __name__ == "__main__":
     main()
