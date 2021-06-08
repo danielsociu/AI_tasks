@@ -5,6 +5,9 @@ import pygame
 import sys
 
 class Cell:
+    """
+    A cell of the matrix
+    """
     wallWidth = 15
     backgroundCell = (255,255,255)
     lineColor = (33, 222, 71)
@@ -48,6 +51,10 @@ class Cell:
                 self.code += 2**3
 
     def copyCell(self):
+        """
+        copy a cell for our min_max and alpha_beta algorithms
+        copies only what's necessary for finding best solution
+        """
         newCell = Cell(
                 column = self.column,
                 line = self.line,
@@ -57,6 +64,9 @@ class Cell:
         return newCell
 
     def drawCell(self, index = None, background = None):
+        """
+        Draws a cell to the display
+        """
         if background:
             pygame.draw.rect(Cell.display, background, self.rectangle)
         else:
@@ -69,6 +79,9 @@ class Cell:
             byte *= 2
 
 class Piece:
+    """
+    A game piece (red/blue)
+    """
     def __init__(self, image, moves, name, dimension, line, column, goal):
         self.image = image 
         self.name = name
@@ -86,6 +99,10 @@ class Piece:
 
 
 class Interface:
+    """
+    Game interface, it has data about drawing and
+    the cells of the game (walls as well)
+    """
     screenColor = (0, 0, 0)
     screen = None
     linesNumber = None
@@ -112,6 +129,9 @@ class Interface:
                 ]
 
     def copyMatrix(self):
+        """
+        copy a matrix with minimal needs
+        """
         cellMatrix = [[
                 cell.copyCell() for cell in line]
             for line in self.cellMatrix
@@ -129,6 +149,9 @@ class Interface:
             screenColor = (0, 0, 0),
             screen = None
             ):
+        """
+        Initializes the class defaults
+        """
         cls.linesNumber = linesNumber
         cls.columnsNumber = columnsNumber
         cls.cellWidth = cellWidth
@@ -138,6 +161,9 @@ class Interface:
         cls.screen = screen
 
     def drawImage(self, image, cell):
+        """
+        Draws an image to screen
+        """
         self.screen.blit(
                 image,
                 (
@@ -146,6 +172,9 @@ class Interface:
                 ))
 
     #(cell, k, wall, i, j)
+    """
+    Draws all the screen, with cells and pieces
+    """
     def drawGameScreen(self, pieces, walls = None, highlightCells = None):
         Interface.screen.fill(self.screenColor)
         for i, line in enumerate(self.cellMatrix):
@@ -178,6 +207,9 @@ class Game:
         self.interface.drawGameScreen(self.pieces, **kwargs)
 
     def final(self):
+        """
+        Check if the game is in a final state
+        """
         if self.red.line == self.red.goal:
             return "red"
         elif self.blue.line == self.blue.goal:
@@ -185,6 +217,10 @@ class Game:
         return False
     
     def estimateScore(self, depth):
+        """
+        Estimation score, it considers the number of moves to 
+        to goal and how many walls the user has left
+        """
         final = self.final()
         if final == self.__class__.GMAX:
             return self.__class__.max_score + depth
@@ -199,6 +235,9 @@ class Game:
                 )
 
     def estimateScore2(self, depth):
+        """
+        Estimation score that checks how many lines till solution
+        """
         final = self.final()
         if final == self.__class__.GMAX:
             return self.__class__.max_score + depth
@@ -216,6 +255,9 @@ class Game:
         return cls.GMAX if player == cls.GMIN else cls.GMIN
 
     def getOppositeWalls(self, x, y, index):
+        """
+        Gets the opposite wall to verify a cut,
+        """
         nextIndex = None
         if x == 1:
             nextIndex = (index + (1 if (index == 1) else -1)) % 4 
@@ -228,6 +270,9 @@ class Game:
         return nextIndex
 
     def checkOppositeWall(self,cell1, cell2, x, y, index):
+        """
+        checks if the wall we want to build will cut another one
+        """
         nextIndex1 = self.getOppositeWalls(x, y, index)
         nextIndex2 = self.getOppositeWalls(x, y, (index + 2) % 4)
         if cell1.code & 2**nextIndex1 and cell2.code & 2**nextIndex2:
@@ -236,12 +281,19 @@ class Game:
 
 
     def checkValidationWall(self, i, j, moveX, moveY, index):
+        """
+        Checks if the wall is valid (if there no other wall there)
+        """
         nextCell = self.interface.cellMatrix[i + moveX][j + moveY]
         if (nextCell.code & 2**index):
             return None
         return (nextCell, index, nextCell.wall[index], i + moveX, j + moveY)
 
     def getWallContinuation(self, currentWall):
+        """
+        Gets the wall continuation, when we send 2 walls
+        Priority will be towards + 1 in either direction
+        """
         affectedCells = []
         bad = 0
         if (currentWall[0][1] & 1) != (currentWall[1][1] & 1) or (currentWall[0][0].code & 2**currentWall[0][1]):
@@ -271,11 +323,18 @@ class Game:
         return affectedCells
 
     def insideCheck(self, pos):
+        """
+        Checks if the position dictionary is inside the matrix
+        """
         if 0 <= pos['x'] < Interface.linesNumber and 0 <= pos['y'] < Interface.columnsNumber:
             return True
         return False
 
     def semiLee(self, playerName):
+        """
+        Lee that gets the shortest path to goal, if it exists
+        or 0 otherwise
+        """
         nextX = [-1, 0, 1, 0]
         nextY = [0, 1, 0, -1]
         player = self.pieces[playerName]
@@ -303,6 +362,10 @@ class Game:
         return 0
     
     def checkWallBlock(self, affectedCells):
+        """
+        Checks if adding a wall would block any of the pieces
+        and prevent them from getting to their goal
+        """
         ok = True
         for (cell, index, wall, i, j) in affectedCells:
             cell.code |= 2 ** index
@@ -314,6 +377,10 @@ class Game:
         return ok
 
     def getNextCells(self, playerName):
+        """
+        Gets next cells that the player can move to
+        Also checks if there is another player nearby or a wall block
+        """
         nextX = [-1, 0, 1, 0]
         nextY = [0, 1, 0, -1]
         player = self.pieces[playerName]
@@ -346,6 +413,9 @@ class Game:
                     nextCells.append(curCell)
         return nextCells + nextCells2
     def wallMoves(self, player):
+        """
+        Generates all the wall moves (takes too much time to run)
+        """
         games = []
         playerData = self.pieces[player]
         for i, line in enumerate(self.interface.cellMatrix):
@@ -385,6 +455,10 @@ class Game:
         return games
 
     def probableWallMoves(self, player):
+        """
+        Gets the relevant wall moves, the ones that are a continuation
+        to an existing wall
+        """
         games = []
         playerData = self.pieces[player]
         for i in range(len(self.interface.cellMatrix) - 1):
@@ -442,6 +516,9 @@ class Game:
         return games
 
     def userWalls(self, player):
+        """
+        Gets the wall moves around the opposite player
+        """
         games = []
         oppositePlayer = self.pieces[self.getOppositePlayer(player)]
         playerData = self.pieces[player]
@@ -473,6 +550,9 @@ class Game:
 
 
     def userMoves(self, player):
+        """
+        Gets the available user moves
+        """
         games = []
         user_moves = self.getNextCells(player)
         for cell in user_moves:
@@ -490,6 +570,9 @@ class Game:
 
 
 class State:
+    """
+    A node in the graph for min_max and alpha_beta
+    """
     def __init__(self, game, currentPlayer, depth, father = None, score = None):
         self.game = game
         self.currentPlayer = currentPlayer
@@ -501,6 +584,9 @@ class State:
         self.chosenState = None
 
     def moves(self):
+        """
+        Generates all the possible moves for the current user
+        """
         states = []
         if self.game.pieces[self.currentPlayer].moves > 0:
             wall_moves = self.game.probableWallMoves(self.currentPlayer)
@@ -515,6 +601,9 @@ class State:
         return states
 
 def min_max(state, scoring = 1):
+    """
+    min max algorithm to get the best move for the computer
+    """
     if state.depth == 0  or state.game.final():
         if scoring == 1:
             state.score = state.game.estimateScore(state.depth)
@@ -532,6 +621,9 @@ def min_max(state, scoring = 1):
     return state
 
 def alpha_beta(alpha, beta, state, scoring = 1):
+    """
+    alpha beta algorithm to get the best move for the computer
+    """
     if state.depth == 0  or state.game.final():
         if scoring == 1:
             state.score = state.game.estimateScore(state.depth)
@@ -715,6 +807,7 @@ def draw_menu(display, game, size):
             pygame.display.update()
 
 def main():
+    # Initializing variables
     pygame.init()
     pygame.display.set_caption("Sociu Daniel - Quoridor")
     linesNumber = 9
@@ -738,7 +831,7 @@ def main():
     red = Piece(imageRed, 10, "red", Interface.imageDimension, Interface.linesNumber - 1, Interface.columnsNumber // 2, 0)
     blue = Piece(imageBlue, 10, "blue", Interface.imageDimension, 0, Interface.columnsNumber // 2, Interface.linesNumber - 1)
     game = Game(interface = Interface(), red = red, blue = blue)
-    # GMIN is the user and GMAX is the computer
+    # Draw the menu and get the data
     algorith_type, difficulty, Game.GMIN, game_mode = draw_menu(screen, game, size)
     Game.GMAX = 'blue' if Game.GMIN == 'red' else 'red'
     MAX_DEPTH = difficulty
@@ -756,6 +849,7 @@ def main():
         while True:
             if (current_state.currentPlayer == game.GMIN):
                 if not start_time:
+                    # Printing details / updateing screen
                     current_state.game.drawGameScreen()
                     display_turn = fontObject.render("To move: {}".format(current_state.currentPlayer), True, (255,0,0))
                     screen.blit(display_turn, display_turn.get_rect())
@@ -766,6 +860,7 @@ def main():
                         pygame.quit()
                         sys.exit()
                     if ev.type == pygame.MOUSEBUTTONDOWN and nextCells:
+                        # if the user has clicked on his piece
                         pos = pygame.mouse.get_pos()
                         for cell in nextCells:
                             if cell.rectangle.collidepoint(pos):
@@ -794,6 +889,7 @@ def main():
                         screen.blit(display_turn, display_turn.get_rect())
                         pygame.display.update()
                     elif ev.type == pygame.MOUSEBUTTONDOWN:
+                        # Waiting for a user move, either be his piece or a wall
                         finished = False
                         pos = pygame.mouse.get_pos()
                         wallFound = []
